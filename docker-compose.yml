@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  dind:
+    image: docker:24-dind
+    container_name: dind
+    privileged: true
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    volumes:
+      - docker-certs:/certs
+      - docker-cache:/var/lib/docker
+    networks: [jenkins]
+    ports:
+      - "2376:2376"  # Docker daemon (TLS)
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    user: root
+    depends_on: [dind]
+    environment:
+      - DOCKER_HOST=tcp://dind:2376
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_TLS_VERIFY=1
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - docker-certs:/certs/client:ro
+      - ./jenkins/init.groovy.d:/usr/share/jenkins/ref/init.groovy.d:ro
+    networks: [jenkins]
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+
+volumes:
+  jenkins_home:
+  docker-certs:
+  docker-cache:
+
+networks:
+  jenkins:
