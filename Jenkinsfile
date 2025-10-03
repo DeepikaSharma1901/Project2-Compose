@@ -1,33 +1,41 @@
 pipeline {
-  agent any
-  environment {
-    IMAGE_NAME = "express-sample"   // change if your app/image name is different
-  }
-  stages {
-    stage('Checkout') {
-      steps { checkout scm }
+    agent { 
+        docker { image 'node:16' } 
     }
-    stage('Build & Push Docker image') {
-      steps {
-        script {
-          withCredentials([usernamePassword(
-              credentialsId: 'dockerhub-creds',
-              usernameVariable: 'DOCKERHUB_USER',
-              passwordVariable: 'DOCKERHUB_TOKEN'
-          )]) {
-            sh '''
-              echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin
-              docker build -t $DOCKERHUB_USER/${IMAGE_NAME}:$BUILD_NUMBER -t $DOCKERHUB_USER/${IMAGE_NAME}:latest .
-              docker push $DOCKERHUB_USER/${IMAGE_NAME}:$BUILD_NUMBER
-              docker push $DOCKERHUB_USER/${IMAGE_NAME}:latest
-              docker logout
-            '''
-          }
+
+    stages {
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
         }
-      }
+
+        stage('Run Tests') {
+            steps {
+                sh 'npm test'
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                sh 'npm install -g snyk'
+                sh 'snyk test || exit 1'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t deepikasharma1901/nodeapp:latest .'
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([string(credentialsId: 'dockerhub-pass', variable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u deepikasharma1901 --password-stdin'
+                    sh 'docker push deepikasharma1901/nodeapp:latest'
+                }
+            }
+        }
     }
-  }
-  post {
-    always { sh 'docker image prune -f || true' }
-  }
 }
