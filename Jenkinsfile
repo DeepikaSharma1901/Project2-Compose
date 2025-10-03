@@ -25,15 +25,15 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t deepikasharma1901/nodeapp:latest .'
+                sh 'docker build -t 21952195/nodeapp:latest .'
             }
         }
 
         stage('Push Docker Image') {
             steps {
                 withCredentials([string(credentialsId: 'dockerhub-pass', variable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u deepikasharma1901 --password-stdin'
-                    sh 'docker push deepikasharma1901/nodeapp:latest'
+                    sh 'echo $DOCKER_PASS | docker login -u 21952195 --password-stdin'
+                    sh 'docker push 21952195/nodeapp:latest'
                 }
             }
         }
