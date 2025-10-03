@@ -1,7 +1,5 @@
 pipeline {
-    agent { 
-        docker { image 'node:16' } 
-    }
+    agent any
 
     stages {
         stage('Install Dependencies') {
@@ -31,8 +29,8 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                withCredentials([string(credentialsId: 'dockerhub-pass', variable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u 21952195 --password-stdin'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-pass', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                     sh 'docker push 21952195/nodeapp:latest'
                 }
             }
